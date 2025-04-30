@@ -1,0 +1,42 @@
+name: Ubuntu GUI with Tailscale + noVNC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ubuntu-gui:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Tailscale
+      run: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+        sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --hostname ubuntu-gui --ssh
+
+    - name: Install Desktop, VNC, Firefox, and noVNC
+      run: |
+        sudo apt update
+        sudo apt install -y xfce4 xfce4-goodies tightvncserver firefox git python3-websockify python3-pip
+        pip3 install numpy  # dependency for noVNC
+        git clone https://github.com/novnc/noVNC.git ~/noVNC
+        git clone https://github.com/novnc/websockify ~/noVNC/utils/websockify
+
+    - name: Set VNC Password
+      run: |
+        mkdir -p ~/.vnc
+        echo "123456" | vncpasswd -f > ~/.vnc/passwd
+        chmod 600 ~/.vnc/passwd
+
+    - name: Start VNC Server
+      run: |
+        vncserver :1 -geometry 1920x1080 -depth 24
+
+    - name: Start noVNC
+      run: |
+        nohup ~/noVNC/utils/novnc_proxy --vnc localhost:5901 --listen 6080 &
+
+    - name: Keep Runner Alive
+      run: sleep 11800
