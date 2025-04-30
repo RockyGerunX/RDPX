@@ -1,0 +1,41 @@
+name: Ubuntu GNOME + Tailscale + noVNC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-desktop:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Tailscale
+      run: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+        sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --hostname github-gnome --ssh
+
+    - name: Install GNOME desktop and dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y ubuntu-desktop x11vnc novnc websockify python3-websockify gnome-terminal
+
+    - name: Set up user password
+      run: |
+        echo 'runner:password' | sudo chpasswd
+
+    - name: Set up x11vnc and noVNC
+      run: |
+        # Set a VNC password
+        mkdir -p ~/.vnc
+        x11vnc -storepasswd "vncpassword" ~/.vnc/passwd
+
+        # Start x11vnc in background
+        nohup x11vnc -display :0 -rfbauth ~/.vnc/passwd -forever -shared &
+
+        # Start noVNC server on port 6080
+        nohup websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
+
+    - name: Keep runner alive
+      run: sleep 11800
