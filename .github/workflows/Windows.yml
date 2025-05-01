@@ -1,0 +1,58 @@
+name: Tailscale RDP Tunnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-rdp-tunnel:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Enable RDP
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "p@ssw0rd!" -Force)
+
+    - name: Download and Install Tailscale
+      run: |
+        Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.66.4.exe" -OutFile "$env:TEMP\tailscale-installer.exe"
+        Start-Process -FilePath "$env:TEMP\tailscale-installer.exe" -ArgumentList "/quiet" -Wait
+
+    - name: Restore Tailscale state if exists
+      uses: actions/download-artifact@v4
+      with:
+        name: tailscale-state
+        path: C:\tsstate
+
+    - name: Start Tailscale with state
+      env:
+        TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+      run: |
+        mkdir C:\tsstate
+        $stateFile = "C:\tsstate\tsstate.txt"
+        if (-not (Test-Path $stateFile)) {
+          echo "State file not found, starting new session"
+          & 'C:\Program Files (x86)\Tailscale IPN\tailscale.exe' up --authkey $env:TS_AUTHKEY --hostname github-runner --state $stateFile
+        } else {
+          echo "Using existing Tailscale state"
+          & 'C:\Program Files (x86)\Tailscale IPN\tailscale.exe' up --state $stateFile
+        }
+
+    - name: Show Tailscale IP
+      run: |
+        & 'C:\Program Files (x86)\Tailscale IPN\tailscale.exe' ip
+
+    - name: Save Tailscale state
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tailscale-state
+        path: C:\tsstate\tsstate.txt
+
+    - name: Keep GitHub Runner Alive
+      run: Start-Sleep -Seconds 21600  # 6 jam
