@@ -1,4 +1,4 @@
-name: Ubuntu GUI with Tailscale + VNC
+name: RDPX Ubuntu
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
     - name: Install Desktop, VNC, Firefox
       run: |
         sudo apt update
-        sudo apt install -y xfce4 xfce4-goodies tightvncserver firefox
+        sudo apt install -y xfce4 xfce4-goodies tightvncserver
 
     - name: Set Root Password
       run: |
