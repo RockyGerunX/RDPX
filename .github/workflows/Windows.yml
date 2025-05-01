@@ -1,0 +1,42 @@
+name: RDPX Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-rdp-tunnel:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Enable RDP
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-LocalUser -Name "admin123" -Password (ConvertTo-SecureString -AsPlainText "admin123" -Force)
+
+    - name: Download and Install Tailscale
+      run: |
+        Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.66.4.exe" -OutFile "$env:TEMP\tailscale-installer.exe"
+        Start-Process -FilePath "$env:TEMP\tailscale-installer.exe" -ArgumentList "/quiet" -Wait
+
+    - name: Authenticate to Tailscale
+      env:
+        TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+      run: |
+        $tailscalePath = "C:\Program Files\Tailscale\tailscale.exe"
+        if (-Not (Test-Path $tailscalePath)) {
+          Write-Error "Tailscale executable not found at expected path: $tailscalePath"
+          Exit 1
+        }
+        & $tailscalePath up --authkey $env:TS_AUTHKEY --hostname github-runner
+
+    - name: Show Tailscale IP
+      run: |
+        & "C:\Program Files\Tailscale\tailscale.exe" ip
+
+    - name: Keep GitHub Runner Alive
+      run: Start-Sleep -Seconds 21600  # 6 jam max
