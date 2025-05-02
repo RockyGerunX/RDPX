@@ -36,4 +36,4 @@ jobs:
         vncserver :1 -geometry 1920x1080 -depth 24
 
     - name: Keep Runner Alive
-      run: sleep 11800
+      run: sleep 21600
