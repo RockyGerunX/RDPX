@@ -1,4 +1,4 @@
-name: Tailscale RDP Tunnel
+name: RDPX Windows
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
       env:
         TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
       run: |
-        tailscale up --authkey $env:TS_AUTHKEY --hostname github-runner --accept-routes
+        & "C:\Program Files\Tailscale IPN\tailscale.exe" up --authkey $env:TS_AUTHKEY --hostname github-runner --accept-routes
 
     - name: Keep the GitHub Action Runner Alive (6 Hours)
       run: Start-Sleep -Seconds 21600
