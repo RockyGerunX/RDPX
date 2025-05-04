@@ -1,3 +1,4 @@
+
 name: RDPX Windows
 
 on:
@@ -16,7 +17,7 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-        Set-LocalUser -Name "admin" -Password (ConvertTo-SecureString -AsPlainText "p@ssw0rd!" -Force)
+        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "p@ssw0rd!" -Force)
         Add-LocalGroupMember -Group "Remote Desktop Users" -Member "admin"
 
     - name: Download and Install Tailscale
