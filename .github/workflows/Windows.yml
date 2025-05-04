@@ -11,14 +11,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Enable RDP and Create User
+    - name: Enable RDP and Set Password for 'admin'
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-        New-LocalUser -Name "admin123" -Password (ConvertTo-SecureString -AsPlainText "Admin@123@123" -Force) -FullName "Admin RDP" -Description "RDP User"
-        Add-LocalGroupMember -Group "Remote Desktop Users" -Member "admin123"
-        Add-LocalGroupMember -Group "Administrators" -Member "admin123"
+        Set-LocalUser -Name "admin" -Password (ConvertTo-SecureString -AsPlainText "p@ssw0rd!" -Force)
+        Add-LocalGroupMember -Group "Remote Desktop Users" -Member "admin"
 
     - name: Download and Install Tailscale
       run: |
