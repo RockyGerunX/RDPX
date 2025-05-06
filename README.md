@@ -1,81 +1,86 @@
 # RDPX - Free Ubuntu & Windows GUI Access via GitHub Actions
 
-RDPX adalah proyek otomatisasi GitHub Actions yang memungkinkan Anda menjalankan sistem operasi **Ubuntu Desktop** atau **Windows dengan RDP** secara gratis di cloud selama maksimal **6 hingga 9 jam**, menggunakan Tailscale untuk konektivitas aman.
-
-## ✨ Fitur
-
-- 🖥️ Ubuntu Desktop dengan XFCE + VNC
-- 🪟 Windows Remote Desktop (RDP) dengan autentikasi bawaan
-- 🔒 Terhubung secara aman melalui [Tailscale](https://tailscale.com/)
-- 🕒 Runtime hingga 6–9 jam per sesi
-- 🚀 Mudah dijalankan dengan satu klik melalui GitHub Actions
+**RDPX** is a GitHub Actions automation project that allows you to run full **Ubuntu Desktop** or **Windows RDP sessions** in the cloud for up to **6–9 hours** for free, using Tailscale for secure connectivity.
 
 ---
 
-## 📦 Struktur Workflow
+## ✨ Features
 
-### 1. Ubuntu GUI Access (`.github/workflows/Ubuntu.yml`)
+- 🖥️ Ubuntu GUI with XFCE + VNC access
+- 🪟 Windows Remote Desktop (RDP) with built-in user authentication
+- 🔐 Secure access via [Tailscale](https://tailscale.com/)
+- ⏱️ Up to 6 hours runtime per session
+- ⚙️ Single-click deployment using GitHub Actions
 
-- Menginstal:
-  - XFCE4 Desktop
+---
+
+## 📁 Workflow Overview
+
+### Ubuntu GUI (`.github/workflows/Ubuntu.yml`)
+
+- Installs:
+  - XFCE4 Desktop Environment
   - TightVNCServer
-  - Firefox
-- Mengatur password root & VNC (`admin123`)
-- Mengaktifkan koneksi Tailscale untuk remote access
-- Menjaga runner aktif selama **6 jam** (21600 detik)
+  - Firefox Browser
+- Sets root and VNC password: `admin123`
+- Connects via Tailscale using a secret auth key
+- Keeps runner alive for 6 hours (21,600 seconds)
 
-### 2. Windows RDP Access (`.github/workflows/Windows.yml`)
+### Windows RDP (`.github/workflows/Windows.yml`)
 
-- Mengaktifkan fitur Remote Desktop (RDP)
-- Mengatur user password: `p@ssw0rd!` untuk `runneradmin`
-- Mengaktifkan firewall RDP
-- Menginstal dan mengautentikasi Tailscale
-- Menjaga sesi aktif selama **6 jam**
-
----
-
-## 🛠️ Cara Menggunakan
-
-### Prasyarat
-
-1. Akun GitHub
-2. [Tailscale Auth Key](https://tailscale.com/kb/1085/auth-keys/) – disimpan di `Settings > Secrets and variables > Actions` sebagai `TS_AUTHKEY`
-
-### Langkah Menjalankan
-
-1. Fork repositori ini ke akun GitHub Anda.
-2. Buka tab **Actions** di repositori Anda.
-3. Pilih workflow `RDPX Ubuntu` atau `RDPX Windows`.
-4. Klik **Run workflow** → Jalankan.
-5. Setelah beberapa menit, sistem siap digunakan.
+- Enables Remote Desktop (RDP)
+- Sets default password: `p@ssw0rd!` for user `runneradmin`
+- Opens RDP firewall ports
+- Installs and authenticates Tailscale
+- Keeps session active for 6 hours
 
 ---
 
-## 🔗 Akses Desktop
+## 🚀 How to Use
 
-Setelah workflow berjalan:
-- Login ke akun **Tailscale** yang sama dengan auth key Anda.
-- Lihat node `ubuntu-gui` atau `github-runner` di daftar perangkat.
-- Hubungkan melalui:
-  - **Ubuntu**: VNC client ke `hostname:1` (password: `admin123`)
-  - **Windows**: Remote Desktop (RDP) ke IP hostname tersebut (user: `runneradmin`, password: `p@ssw0rd!`)
+### Prerequisites
 
----
+1. A GitHub account
+2. A valid [Tailscale Auth Key](https://tailscale.com/kb/1085/auth-keys/) (stored as a GitHub Actions secret named `TS_AUTHKEY`)
 
-## ⚠️ Peringatan
+### Steps
 
-- Jangan gunakan ini untuk aktivitas ilegal.
-- RDP/VNC akan **berakhir otomatis setelah ~6 jam**.
-- Jangan ubah password default jika tidak memperbarui dokumentasi.
+1. **Fork this repository** to your GitHub account.
+2. Go to the **Actions** tab.
+3. Select either `RDPX Ubuntu` or `RDPX Windows`.
+4. Click **Run workflow**.
+5. Wait a few minutes for the environment to initialize.
 
 ---
 
-## 🧑‍💻 Kontribusi
+## 🔗 Accessing the Remote Desktop
 
-Kontribusi sangat terbuka! Silakan buat issue atau pull request untuk peningkatan keamanan, performa, atau fitur.
+Once the workflow is running:
+
+- Log into the same Tailscale account you used to generate the auth key.
+- Find the device:
+  - **Ubuntu**: `ubuntu-gui`
+  - **Windows**: `github-runner`
+- Connect using:
+  - **VNC (Ubuntu)**: `hostname:1` (password: `admin123`)
+  - **RDP (Windows)**: Remote Desktop to device IP (user: `runneradmin`, password: `p@ssw0rd!`)
 
 ---
 
-## 📄 Lisensi
+## ⚠️ Disclaimer
 
-Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+> This project is for **educational purposes only**.  
+> Do not use this for any unethical, unauthorized, or illegal activity.  
+> Sessions are temporary and automatically terminate after 6 hours.
+
+---
+
+## 🤝 Contributions
+
+Feel free to open issues or submit pull requests to improve functionality, add features, or enhance security.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
