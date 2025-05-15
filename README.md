@@ -22,7 +22,7 @@
   - XFCE4 Desktop Environment
   - TightVNCServer
   - Firefox Browser
-- Sets root and VNC password: `admin123`
+- Sets root and VNC password: `admin@123`
 - Connects via Tailscale using a secret auth key
 - Keeps runner alive for 6 hours (21,600 seconds)
 
