@@ -12,6 +12,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Log checkout details
       run: |
         echo "INFO: Repository checked out successfully"
         echo "COMMIT_SHA: ${{ github.sha }}"
@@ -20,7 +22,7 @@ jobs:
       run: |
         echo "INFO: Checking for previous session data"
         if [ -d "/tmp/rdpx-session" ]; then
-          echo "water: Restoring previous session data
+          echo "INFO: Restoring previous session data"
           sudo cp -r /tmp/rdpx-session/* /home/runner/
         else
           echo "INFO: No previous session data found"
