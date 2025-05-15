@@ -6,34 +6,98 @@ on:
 jobs:
   ubuntu-gui:
     runs-on: ubuntu-latest
-    timeout-minutes: 540  # 9 jam
+    timeout-minutes: 360  # 6 hours (GitHub Actions max for public repos)
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Log checkout details
+      run: |
+        echo "INFO: Repository checked out successfully"
+        echo "COMMIT_SHA: ${{ github.sha }}"
 
     - name: Install Tailscale
       run: |
+        echo "INFO: Installing Tailscale"
         curl -fsSL https://tailscale.com/install.sh | sh
-        sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --hostname ubuntu-gui --ssh
+        if [ $? -eq 0 ]; then
+          echo "INFO: Tailscale installed successfully"
+          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --hostname ubuntu-gui-${{ github.run_id }} --ssh
+          echo "INFO: Tailscale configured"
+        else
+          echo "ERROR: Failed to install Tailscale"
+          exit 1
+        fi
 
-    - name: Install Desktop, VNC, Firefox
+    - name: Install Desktop and VNC
       run: |
+        echo "INFO: Updating package lists"
         sudo apt update
+        echo "INFO: Installing XFCE and VNC"
         sudo apt install -y xfce4 xfce4-goodies tightvncserver
+        if [ $? -eq 0 ]; then
+          echo "INFO: Desktop environment and VNC installed successfully"
+        else
+          echo "ERROR: Failed to install desktop environment or VNC"
+          exit 1
+        fi
 
     - name: Set Root Password
       run: |
-        echo "root:admin123" | sudo chpasswd
+        echo "INFO: Setting root password"
+        echo "root:admin@123" | sudo chpasswd
+        if [ $? -eq 0 ]; then
+          echo "INFO: Root password set to admin@123 successfully"
+        else
+          echo "ERROR: Failed to set root password"
+          exit 1
+        fi
 
     - name: Set VNC Password
       run: |
+        echo "INFO: Setting VNC password"
         mkdir -p ~/.vnc
-        echo "admin123" | vncpasswd -f > ~/.vnc/passwd
+        echo "admin@123" | vncpasswd -f > ~/.vnc/passwd
         chmod 600 ~/.vnc/passwd
+        if [ $? -eq 0 ]; then
+          echo "INFO: VNC password set to admin@123 successfully"
+        else
+          echo "ERROR: Failed to set VNC password"
+          exit 1
+        fi
 
     - name: Start VNC Server
       run: |
+        echo "INFO: Starting VNC server"
         vncserver :1 -geometry 1920x1080 -depth 24
+        if [ $? -eq 0 ]; then
+          echo "INFO: VNC server started on display :1"
+        else
+          echo "ERROR: Failed to start VNC server"
+          exit 1
+        fi
 
-    - name: Keep Runner Alive
-      run: sleep 21600
+    - name: Keep Runner Alive and Display Tailscale IP
+      run: |
+        echo "INFO: Retrieving Tailscale IP"
+        TAILSCALE_IP=$(tailscale ip --4)
+        if [ -n "$TAILSCALE_IP" ]; then
+          echo "INFO: Tailscale IP: $TAILSCALE_IP"
+          echo "INFO: VNC server running on $TAILSCALE_IP:5901"
+          echo "INFO: SSH available via 'ssh ubuntu-gui-${{ github.run_id }}'"
+        else
+          echo "ERROR: Failed to retrieve Tailscale IP"
+          exit 1
+        fi
+        echo "INFO: Keeping runner alive for 5.5 hours"
+        sleep 19800  # 5.5 hours to stay within 6-hour limit
+      timeout-minutes: 330  # 5.5 hours
+
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "INFO: Cleaning up VNC server"
+        vncserver -kill :1 2>/dev/null || echo "INFO: No VNC server to kill"
+        echo "INFO: Workflow completed"
