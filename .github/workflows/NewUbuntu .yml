@@ -1,0 +1,121 @@
+name: RDPX Ubuntu
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ubuntu-gui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours (GitHub Actions max for public repos)
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      run: |
+        echo "INFO: Repository checked out successfully"
+        echo "COMMIT_SHA: ${{ github.sha }}"
+
+    - name: Restore Previous Session Data
+      run: |
+        echo "INFO: Checking for previous session data"
+        if [ -d "/tmp/rdpx-session" ]; then
+          echo "water: Restoring previous session data
+          sudo cp -r /tmp/rdpx-session/* /home/runner/
+        else
+          echo "INFO: No previous session data found"
+        fi
+
+    - name: Install Tailscale
+      run: |
+        echo "INFO: Installing Tailscale"
+        curl -fsSL https://tailscale.com/install.sh | sh
+        if [ $? -eq 0 ]; then
+          echo "INFO: Tailscale installed successfully"
+          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --hostname ubuntu-gui-${{ github.run_id }} --ssh
+          echo "INFO: Tailscale configured"
+        else
+          echo "ERROR: Failed to install Tailscale"
+          exit 1
+        fi
+
+    - name: Install Desktop and VNC
+      run: |
+        echo "INFO: Updating package lists"
+        sudo apt update
+        echo "INFO: Installing XFCE and VNC"
+        sudo apt install -y xfce4 xfce4-goodies tightvncserver
+        if [ $? -eq 0 ]; then
+          echo "INFO: Desktop environment and VNC installed successfully"
+        else
+          echo "ERROR: Failed to install desktop environment or VNC"
+          exit 1
+        fi
+
+    - name: Set Root Password
+      run: |
+        echo "INFO: Setting root password"
+        echo "root:admin@123" | sudo chpasswd
+        if [ $? -eq 0 ]; then
+          echo "INFO: Root password set to admin@123 successfully"
+        else
+          echo "ERROR: Failed to set root password"
+          exit 1
+        fi
+
+    - name: Set VNC Password
+      run: |
+        echo "INFO: Setting VNC password"
+        mkdir -p ~/.vnc
+        echo "admin@123" | vncpasswd -f > ~/.vnc/passwd
+        chmod 600 ~/.vnc/passwd
+        if [ $? -eq 0 ]; then
+          echo "INFO: VNC password set to admin@123 successfully"
+        else
+          echo "ERROR: Failed to set VNC password"
+          exit 1
+        fi
+
+    - name: Start VNC Server
+      run: |
+        echo "INFO: Starting VNC server"
+        vncserver :1 -geometry 1920x1080 -depth 24
+        if [ $? -eq 0 ]; then
+          echo "INFO: VNC server started on display :1"
+        else
+          echo "ERROR: Failed to start VNC server"
+          exit 1
+        fi
+
+    - name: Save Session Data
+      run: |
+        echo "INFO: Saving session data"
+        mkdir -p /tmp/rdpx-session
+        cp -r /home/runner/* /tmp/rdpx-session/ 2>/dev/null
+        echo "INFO: Session data saved to /tmp/rdpx-session"
+
+    - name: Keep Runner Alive and Display Tailscale IP
+      run: |
+        echo "INFO: Retrieving Tailscale IP"
+        TAILSCALE_IP=$(tailscale ip --4)
+        if [ -n "$TAILSCALE_IP" ]; then
+          echo "INFO: Tailscale IP: $TAILSCALE_IP"
+          echo "INFO: VNC server running on $TAILSCALE_IP:5901"
+          echo "INFO: SSH available via 'ssh ubuntu-gui-${{ github.run_id }}'"
+        else
+          echo "ERROR: Failed to retrieve Tailscale IP"
+          exit 1
+        fi
+        echo "INFO: Keeping runner alive for 5.5 hours"
+        sleep 19800  # 5.5 hours to stay within 6-hour limit
+      timeout-minutes: 330  # 5.5 hours
+
+    - name: Cleanup and Prepare for Next Run
+      if: always()
+      run: |
+        echo "INFO: Cleaning up VNC server"
+        vncserver -kill :1 2>/dev/null || echo "INFO: No VNC server to kill"
+        echo "INFO: Saving session data for next run"
+        mkdir -p /tmp/rdpx-session
+        cp -r /home/runner/* /tmp/rdpx-session/ 2>/dev/null
+        echo "INFO: Workflow completed"
